@@ -29,15 +29,15 @@ public class MainActivity extends AppCompatActivity {
     private List<Bitmap> bitmaps;
 
     private Button buttonRecord;
-    private Button buttonProcess ;
+    private Button buttonProcess;
     private Button buttonCalculate;
 
     public void recordButton(View view) {
         dispatchTakeVideoIntent();
-
+        showOnlyProcessButton();
     }
 
-    private void initializeView(){
+    private void initializeView() {
         buttonRecord = findViewById(R.id.button_record_video);
         buttonProcess = findViewById(R.id.button_process_video);
         buttonCalculate = findViewById(R.id.button_calculate_video);
@@ -45,21 +45,20 @@ public class MainActivity extends AppCompatActivity {
 
     public void processButton(View view) {
         this.bitmaps = getFrames(this.videoUri);
-        buttonCalculate.setVisibility(View.VISIBLE);
+        showOnlyCalculateButton();
     }
 
     public void calculateButton(View view) {
         List<Mat> mats = new ArrayList<>();
 
-        for (Bitmap bitmap : this.bitmaps ) {
+        for (Bitmap bitmap : this.bitmaps) {
             Mat mat = new Mat();
             Utils.bitmapToMat(bitmap, mat);
             mats.add(mat);
         }
 
-        Calculations calculations = new Calculations();
-
-        calculations.calculateSignal(mats, bitmaps);
+        Calculations.calculateSignal(mats, bitmaps);
+        showOnlyRecordButton();
     }
 
     private List<Bitmap> getFrames(Uri videoUri) {
@@ -72,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < RECORD_TIME * 1000000; i += 1000000) {
                 Bitmap bitmap = retriever.getFrameAtTime(i);
                 bitmaps.add(bitmap);
-                Log.i(this.getClass().getSimpleName(), "Bitmap "+i/1000000+"second added ");
+                Log.i(this.getClass().getSimpleName(), "Bitmap " + i / 1000000 + "second added ");
             }
         }
 
@@ -111,5 +110,23 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.i(this.getClass().getSimpleName(), "  OpenCVLoader.initDebug(), working.");
         }
+    }
+
+    private void showOnlyRecordButton() {
+        buttonRecord.setVisibility(View.VISIBLE);
+        buttonCalculate.setVisibility(View.INVISIBLE);
+        buttonProcess.setVisibility(View.INVISIBLE);
+    }
+
+    private void showOnlyProcessButton() {
+        buttonRecord.setVisibility(View.INVISIBLE);
+        buttonCalculate.setVisibility(View.INVISIBLE);
+        buttonProcess.setVisibility(View.VISIBLE);
+    }
+
+    private void showOnlyCalculateButton() {
+        buttonRecord.setVisibility(View.INVISIBLE);
+        buttonCalculate.setVisibility(View.VISIBLE);
+        buttonProcess.setVisibility(View.INVISIBLE);
     }
 }

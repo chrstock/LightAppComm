@@ -22,17 +22,16 @@ import java.util.Map;
 
 public class Calculations {
 
-    private List<LineTo> lineList = new ArrayList<>();
-    private Map<String, Point> squarePoints = new HashMap<>();
+    private static List<LineTo> lineList = new ArrayList<>();
+    private static Map<String, Point> squarePoints = new HashMap<>();
 
-    private List<Double> firstRow;
-    private List<Double> firstColumn;
-    private List<Double> lastRow;
-    private List<Double> lastColumn;
+    private static List<Double> firstRow;
+    private static List<Double> firstColumn;
+    private static List<Double> lastRow;
+    private static List<Double> lastColumn;
+    private static String countBit;
 
-    private String countBit;
-
-    public String calculateSignal(List<Mat> mats, List<Bitmap> bitmaps) {
+    public static String calculateSignal(List<Mat> mats, List<Bitmap> bitmaps) {
         int pskOrder;
 
         String psk;
@@ -84,7 +83,7 @@ public class Calculations {
 
     }
 
-    private List<Point> calculateBoundingBoxCenter(Mat mat) {
+    private static List<Point> calculateBoundingBoxCenter(Mat mat) {
 
         int x;
         int y;
@@ -110,7 +109,7 @@ public class Calculations {
         return detectedPoints;
     }
 
-    private void calculateAllDistances(List<Point> points) {
+    private static void calculateAllDistances(List<Point> points) {
 
         int amount = points.size();
         double distance;
@@ -140,7 +139,7 @@ public class Calculations {
         }
     }
 
-    private void determingPointsInSquare() {
+    private static void determingPointsInSquare() {
 
         double nearDistanceOrigin = 2000.0;
         double farDistanceOrigin = 0.0;
@@ -201,7 +200,7 @@ public class Calculations {
 
     }
 
-    private List<Double> calculateRows(int rowCount) {
+    private static List<Double> calculateRows(int rowCount) {
         List<Double> column = new ArrayList<>();
 
         double coordinateXSquarePointA;
@@ -245,7 +244,7 @@ public class Calculations {
         return column;
     }
 
-    private List<Double> calculateColumns(int columnCount) {
+    private static List<Double> calculateColumns(int columnCount) {
 
         List<Double> column = new ArrayList<>();
 
@@ -276,7 +275,7 @@ public class Calculations {
         return column;
     }
 
-    private List<Point> calculateAllPoints() {
+    private static List<Point> calculateAllPoints() {
 
         List<Point> points = new ArrayList<>();
 
@@ -303,7 +302,7 @@ public class Calculations {
     }
 
 
-    private String calculateLightToBitSequence(Mat mat, Bitmap bmp, List<Point> points) {
+    private static String calculateLightToBitSequence(Mat mat, Bitmap bmp, List<Point> points) {
 
         int x, y;
         int pixel;
