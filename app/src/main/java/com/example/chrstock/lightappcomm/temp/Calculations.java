@@ -5,6 +5,7 @@ import android.graphics.Color;
 
 import com.example.chrstock.lightappcomm.model.LineTo;
 import com.example.chrstock.lightappcomm.utils.AsciiConverterUtils;
+import com.example.chrstock.lightappcomm.utils.CustomUtils;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
@@ -17,263 +18,253 @@ import org.opencv.imgproc.Moments;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Calculations {
 
+    private ArrayList<Point> coordinates;
 
-    private ArrayList<Point> Coordinates;
-    private ArrayList<Double> distanceList;
+    private List<LineTo> lineList = new ArrayList<>();
+    private Map<String, Point> squarePoints = new HashMap<>();
 
-    private HashMap<Integer, LineTo> DistanceWithPointsList = new HashMap<>();
-    private HashMap<String, Point> SquarePoints = new HashMap<>();
+    private List<Double> firstRow;
+    private List<Double> firstColumn;
+    private List<Double> lastRow;
+    private List<Double> lastColumn;
+    private List<Point> allPoints;
 
-    ArrayList<Double> C0x;
-    ArrayList<Double> C0y;
-    ArrayList<Double> C11x;
-    ArrayList<Double> C11y;
-    ArrayList<Point> AllPoints;
+    private String countBit;
 
-    String CountBit;
-
-    public String calculateSignal(ArrayList<Mat> AllMats, ArrayList<Bitmap> AllBitmaps) {
+    public String calculateSignal(List<Mat> mats, List<Bitmap> bitmaps) {
         int count = 0;
-        int PSK_order;
+        int pskOrder;
 
-        String PSK;
-        String Bits;
+        String psk;
+        String bits;
 
-        HashMap<Integer, String> PSKSorted = new HashMap<>();
+        List<String> pskSorted = new ArrayList<>();
 
 
-        for (Mat SingleMat : AllMats) {
+        for (Mat mat : mats) {
 
-            PSK_order = 6;
+            pskOrder = 6;
 
-            AllPoints = new ArrayList<Point>();
-            Coordinates = new ArrayList<Point>();
-            distanceList = new ArrayList<Double>();
-            DistanceWithPointsList = new HashMap<>();
+            allPoints = new ArrayList<>();
+            coordinates = new ArrayList<>();
 
-            calculateBoundingBoxCenter(SingleMat);
+            calculateBoundingBoxCenter(mat);
 
             calculateAllDistances();
 
             determingPointsInSquare();
 
-            C0x = calculateColumnX(0);
-            C0y = calculateColumnY(0);
-            C11x = calculateColumnX(11);
-            C11y = calculateColumnY(11);
+            firstRow = calculateRows(0);
+            firstColumn = calculateColumns(0);
+            lastRow = calculateRows(11);
+            lastColumn = calculateColumns(11);
 
             //comment
 
             calculateAllPoints();
             //
 
-            Bits = calculateLightToBitSequence(SingleMat, AllBitmaps.get(count));
+            bits = calculateLightToBitSequence(mat, bitmaps.get(count));
 
-            if (CountBit.charAt(0) == '1') PSK_order = 0;
-            if (CountBit.charAt(1) == '1') PSK_order = 1;
-            if (CountBit.charAt(2) == '1') PSK_order = 2;
-            if (CountBit.charAt(3) == '1') PSK_order = 3;
-            if (CountBit.charAt(4) == '1') PSK_order = 4;
-            if (CountBit.charAt(5) == '1') PSK_order = 5;
+            if (countBit.charAt(0) == '1') pskOrder = 0;
+            if (countBit.charAt(1) == '1') pskOrder = 1;
+            if (countBit.charAt(2) == '1') pskOrder = 2;
+            if (countBit.charAt(3) == '1') pskOrder = 3;
+            if (countBit.charAt(4) == '1') pskOrder = 4;
+            if (countBit.charAt(5) == '1') pskOrder = 5;
 
-            PSK = AsciiConverterUtils.convertToAscii(Bits);
+            psk = AsciiConverterUtils.convertToAscii(bits);
 
-            PSKSorted.put(PSK_order, PSK);
+            pskSorted.add(pskOrder, psk);
 
             count++;
         }
-        PSK = "        ";
+        psk = "        ";
 
-        for (int i = 0; i < PSKSorted.size(); i++) {
-            PSK = PSK + " " + PSKSorted.get(i);
+        for (int i = 0; i < pskSorted.size(); i++) {
+            psk = psk + " " + pskSorted.get(i);
         }
 
-        return PSK;
-        //another comment
+        return psk;
 
     }
 
-    public void calculateBoundingBoxCenter(Mat SiMat) {
-        ArrayList<Integer> x = new ArrayList<>();
-        ArrayList<Integer> y = new ArrayList<>();
+    private void calculateBoundingBoxCenter(Mat mat) {
 
-        Mat Mat_hierarchy = new Mat();
+        int x;
+        int y;
 
-        List<MatOfPoint> MoP_contours = new ArrayList<>();
-        Imgproc.findContours(SiMat, MoP_contours, Mat_hierarchy, 0, Imgproc.CHAIN_APPROX_SIMPLE, new Point(0, 0));
-        Imgproc.drawContours(SiMat, MoP_contours, -1, new Scalar(255, 255, 255), -1);
+        Mat matHierarchy = new Mat();
 
-        List<Moments> mu = new ArrayList<>(MoP_contours.size());
-        for (int i = 0; i < MoP_contours.size(); i++) {
-//            mu.add(i, Imgproc.contourMoments(MoP_contours.get(i)));
-            Moments p = mu.get(i);
-            x.add((int) (p.get_m10() / p.get_m00()));
-            y.add((int) (p.get_m01() / p.get_m00()));
-            Coordinates.add(new Point(x.get(i), y.get(i)));
+        List<MatOfPoint> contours = new ArrayList<>();
+        Imgproc.findContours(mat, contours, matHierarchy, 0, Imgproc.CHAIN_APPROX_SIMPLE, new Point(0, 0));
+        Imgproc.drawContours(mat, contours, -1, new Scalar(255, 255, 255), -1);
+
+        List<Moments> moments = new ArrayList<>(contours.size());
+        for (int i = 0; i < contours.size(); i++) {
+            Moments moment = moments.get(i);
+            x = (int) (moment.get_m10() / moment.get_m00());
+            y = (int) (moment.get_m01() / moment.get_m00());
+            coordinates.add(new Point(x, y));
         }
 
-        Mat_hierarchy.release();
+        matHierarchy.release();
     }
 
-    public void calculateAllDistances() {
+    private void calculateAllDistances() {
 
-        double x1, x0, y1, y0;
-        int Anzahl = Coordinates.size();
-        Double Distance;
-        Double FirstBiggestDistance = 0.0;
-        Double SecondBiggestDistance = 0.0;
+        int amount = coordinates.size();
+        double distance;
+        double firstBiggestDistance = 0.0;
+        double secondBiggestDistance = 0.0;
 
-        for (int i = 0; i < (Anzahl - 1); i++) {
-            x1 = Coordinates.get(i).x;
-            y1 = Coordinates.get(i).y;
-            for (int j = (i + 1); j < Anzahl; j++) {
-                x0 = Coordinates.get(j).x;
-                y0 = Coordinates.get(j).y;
-                distanceList.add(Math.sqrt(((x1 - x0) * (x1 - x0)) + ((y1 - y0) * (y1 - y0))));
-                Distance = Math.sqrt(((x1 - x0) * (x1 - x0)) + ((y1 - y0) * (y1 - y0)));
-                if (Distance > FirstBiggestDistance) {
+        for (int i = 0; i < (amount - 1); i++) {
+            Point pointStart = coordinates.get(i);
+            for (int j = (i + 1); j < amount; j++) {
+                Point pointEnd = coordinates.get(j);
+                distance = CustomUtils.calculateDistance(pointStart, pointEnd);
+                if (distance > firstBiggestDistance) {
 
-                    if (FirstBiggestDistance != 0.0)
-                        DistanceWithPointsList.put(1, DistanceWithPointsList.get(0));
+                    if (firstBiggestDistance != 0.0)
+                        lineList.add(1, lineList.get(0));
 
-                    DistanceWithPointsList.put(0, new LineTo(new Point(x1, y1), new Point(x0, y0)));
-                    SecondBiggestDistance = FirstBiggestDistance;
-                    FirstBiggestDistance = Distance;
+                    lineList.add(0, new LineTo(pointStart, pointEnd));
+                    secondBiggestDistance = firstBiggestDistance;
+                    firstBiggestDistance = distance;
                 } else {
-                    if (Distance > SecondBiggestDistance) {
-                        DistanceWithPointsList.put(1, new LineTo(new Point(x1, y1), new Point(x0, y0)));
-                        SecondBiggestDistance = Distance;
+                    if (distance > secondBiggestDistance) {
+                        lineList.add(1, new LineTo(pointStart, pointEnd));
+                        secondBiggestDistance = distance;
                     }
                 }
             }
         }
     }
 
-    public void determingPointsInSquare() {
+    private void determingPointsInSquare() {
 
-        double NearDistanceOrigin = 2000.0;
-        double FarDistanceOrigin = 0.0;
-        double Distance;
+        double nearDistanceOrigin = 2000.0;
+        double farDistanceOrigin = 0.0;
+        double distance;
 
-
-        //Calculate Highest distance to Origin = D and Nearest = A
         try {
             for (int i = 0; i < 2; i++) {
-                Distance = Math.sqrt(Math.pow(DistanceWithPointsList.get(i).getPointStart().x, 2) + Math.pow(DistanceWithPointsList.get(i).getPointStart().y, 2));
-                if (Distance < NearDistanceOrigin) {
-                    NearDistanceOrigin = Distance;
-                    SquarePoints.put("A", DistanceWithPointsList.get(i).getPointStart());
+                distance = lineList.get(i).getDistance();
+                if (distance < nearDistanceOrigin) {
+                    nearDistanceOrigin = distance;
+                    squarePoints.put("A", lineList.get(i).getPointStart());
                 }
 
-                if (Distance > FarDistanceOrigin) {
-                    FarDistanceOrigin = Distance;
-                    SquarePoints.put("D", DistanceWithPointsList.get(i).getPointStart());
+                if (distance > farDistanceOrigin) {
+                    farDistanceOrigin = distance;
+                    squarePoints.put("D", lineList.get(i).getPointStart());
                 }
 
-                Distance = Math.sqrt(Math.pow(DistanceWithPointsList.get(i).getPointEnd().x, 2) + Math.pow(DistanceWithPointsList.get(i).getPointEnd().y, 2));
-                if (Distance < NearDistanceOrigin) {
-                    NearDistanceOrigin = Distance;
-                    SquarePoints.put("A", DistanceWithPointsList.get(i).getPointEnd());
+                distance = lineList.get(i).getDistance();
+                if (distance < nearDistanceOrigin) {
+                    nearDistanceOrigin = distance;
+                    squarePoints.put("A", lineList.get(i).getPointEnd());
                 }
 
-                if (Distance > FarDistanceOrigin) {
-                    FarDistanceOrigin = Distance;
-                    SquarePoints.put("D", DistanceWithPointsList.get(i).getPointEnd());
+                if (distance > farDistanceOrigin) {
+                    farDistanceOrigin = distance;
+                    squarePoints.put("D", lineList.get(i).getPointEnd());
                 }
 
             }
 
-            if (SquarePoints.containsValue(DistanceWithPointsList.get(0).getPointStart()) || (SquarePoints.containsValue(DistanceWithPointsList.get(0).getPointEnd()))) {
-                if (DistanceWithPointsList.get(1).getPointStart().y < DistanceWithPointsList.get(1).getPointEnd().y) {
-                    SquarePoints.put("B", DistanceWithPointsList.get(1).getPointStart());
-                    SquarePoints.put("C", DistanceWithPointsList.get(1).getPointEnd());
+            if (squarePoints.containsValue(lineList.get(0).getPointStart()) || (squarePoints.containsValue(lineList.get(0).getPointEnd()))) {
+                if (lineList.get(1).getPointStart().y < lineList.get(1).getPointEnd().y) {
+                    squarePoints.put("B", lineList.get(1).getPointStart());
+                    squarePoints.put("C", lineList.get(1).getPointEnd());
                 } else {
-                    SquarePoints.put("C", DistanceWithPointsList.get(1).getPointStart());
-                    SquarePoints.put("B", DistanceWithPointsList.get(1).getPointEnd());
+                    squarePoints.put("C", lineList.get(1).getPointStart());
+                    squarePoints.put("B", lineList.get(1).getPointEnd());
                 }
             } else {
-                if (DistanceWithPointsList.get(0).getPointStart().y < DistanceWithPointsList.get(0).getPointEnd().y) {
-                    SquarePoints.put("B", DistanceWithPointsList.get(0).getPointStart());
-                    SquarePoints.put("C", DistanceWithPointsList.get(0).getPointEnd());
+                if (lineList.get(0).getPointStart().y < lineList.get(0).getPointEnd().y) {
+                    squarePoints.put("B", lineList.get(0).getPointStart());
+                    squarePoints.put("C", lineList.get(0).getPointEnd());
                 } else {
-                    SquarePoints.put("C", DistanceWithPointsList.get(0).getPointStart());
-                    SquarePoints.put("B", DistanceWithPointsList.get(0).getPointEnd());
+                    squarePoints.put("C", lineList.get(0).getPointStart());
+                    squarePoints.put("B", lineList.get(0).getPointEnd());
                 }
             }
 
         } catch (NullPointerException ne) {
             //no elements found
-            SquarePoints.put("A", new Point(0, 0));
-            SquarePoints.put("B", new Point(0, 0));
-            SquarePoints.put("C", new Point(0, 0));
-            SquarePoints.put("D", new Point(0, 0));
+            squarePoints.put("A", new Point(0, 0));
+            squarePoints.put("B", new Point(0, 0));
+            squarePoints.put("C", new Point(0, 0));
+            squarePoints.put("D", new Point(0, 0));
         }
 
 
     }
 
-    public ArrayList<Double> calculateColumnX(int columnCount) {
-        ArrayList<Double> column = new ArrayList<>();
+    private List<Double> calculateRows(int rowCount) {
+        List<Double> column = new ArrayList<>();
 
-        double Difference;
-        double Ax = SquarePoints.get("A").x;
-        double Bx = SquarePoints.get("B").x;
-        double Cx = SquarePoints.get("C").x;
-        double Dx = SquarePoints.get("D").x;
-        //Spalte 0 berechnen mit Abstand durch cleveres Runden
+        double coordinateXSquarePointA = squarePoints.get("A").x;
+        double coordinateXSquarePointB = squarePoints.get("B").x;
+        double coordinateXSquarePointC = squarePoints.get("C").x;
+        double coordinateXSquarePointD = squarePoints.get("D").x;
 
         for (int i = 0; i < 10; i++) {
-            if (columnCount == 0) {
-                Difference = Math.abs(Ax - Cx);
-                Difference = Difference / 9 * i;
+            double difference;
+            if (rowCount == 0) {
+                difference = Math.abs(coordinateXSquarePointA - coordinateXSquarePointC);
+                difference = difference / 9 * i;
 
-                if (Ax > Cx) {
-                    column.add((Ax) - Difference);
+                if (coordinateXSquarePointA > coordinateXSquarePointC) {
+                    column.add((coordinateXSquarePointA) - difference);
                 } else {
-                    column.add((Ax) + Difference);
+                    column.add((coordinateXSquarePointA) + difference);
                 }
             }
 
-            if (columnCount == 11) {
-                Difference = Math.abs(Bx - Dx);
-                Difference = Difference / 9 * i;
+            if (rowCount == 11) {
+                difference = Math.abs(coordinateXSquarePointB - coordinateXSquarePointD);
+                difference = difference / 9 * i;
 
-                if (Bx > Dx) {
-                    column.add(Bx - Difference);
+                if (coordinateXSquarePointB > coordinateXSquarePointD) {
+                    column.add(coordinateXSquarePointB - difference);
                 } else {
-                    column.add(Bx + Difference);
+                    column.add(coordinateXSquarePointB + difference);
                 }
             }
         }
         return column;
     }
 
-    public ArrayList<Double> calculateColumnY(int columnCount) {
+    private List<Double> calculateColumns(int columnCount) {
 
-        ArrayList<Double> column = new ArrayList<>();
+        List<Double> column = new ArrayList<>();
 
-        double Difference;
-        double Ay = SquarePoints.get("A").y;
-        double By = SquarePoints.get("B").y;
-        double Cy = SquarePoints.get("C").y;
-        double Dy = SquarePoints.get("D").y;
+
+        double coordinateYSquarePointA = squarePoints.get("A").y;
+        double coordinateYSquarePointB = squarePoints.get("B").y;
+        double coordinateYSquarePointC = squarePoints.get("C").y;
+        double coordinateYSquarePointD = squarePoints.get("D").y;
 
         for (int i = 0; i < 10; i++) {
+            double difference;
             if (columnCount == 0) {
-                Difference = Math.abs(Cy - Ay);
-                Difference = Difference / 9 * i;
+                difference = Math.abs(coordinateYSquarePointC - coordinateYSquarePointA);
+                difference = difference / 9 * i;
 
-                column.add(Ay + Difference);
+                column.add(coordinateYSquarePointA + difference);
             }
 
             if (columnCount == 11) {
-                Difference = Math.abs(By - Dy);
-                Difference = Difference / 9 * i;
+                difference = Math.abs(coordinateYSquarePointB - coordinateYSquarePointD);
+                difference = difference / 9 * i;
 
-                column.add(By + Difference);
+                column.add(coordinateYSquarePointB + difference);
             }
 
         }
@@ -281,80 +272,70 @@ public class Calculations {
         return column;
     }
 
-    public void calculateAllPoints() {
+    private void calculateAllPoints() {
 
-        double Diffx, Diffy;
+        double diffX, diffY;
         int x, y;
 
         for (int row = 0; row < 10; row++) {
             for (int column = 0; column < 12; column++) {
-                Diffx = C11x.get(row) - C0x.get(row);
-                Diffy = C11y.get(row) - C0y.get(row);
-                Diffx = (Diffx / 11 * column);
-                Diffy = (Diffy / 11 * column);
-                //xvalue
-                x = (int) Math.abs(C0x.get(row) + Diffx);
-                //yvalue
-                if (C0y.get(row) > C11y.get(row)) {
-                    y = (int) Math.abs(C0y.get(row) - Diffy);
+                diffX = lastRow.get(row) - firstRow.get(row);
+                diffY = lastColumn.get(row) - firstColumn.get(row);
+                diffX = (diffX / 11 * column);
+                diffY = (diffY / 11 * column);
+                x = (int) Math.abs(firstRow.get(row) + diffX);
+                if (firstColumn.get(row) > lastColumn.get(row)) {
+                    y = (int) Math.abs(firstColumn.get(row) - diffY);
                 } else {
-                    y = (int) Math.abs(C0y.get(row) + Diffy);
+                    y = (int) Math.abs(firstColumn.get(row) + diffY);
                 }
-                AllPoints.add(new Point(x, y));
+                allPoints.add(new Point(x, y));
             }
         }
     }
 
-//    public ArrayList<Bitmap> Morph(ArrayList<Mat> AllMats, ArrayList<Bitmap> Bit){
-//
-//        for (int i = 0; i<AllMats.size(); i++){
-//            Utils.matToBitmap(AllMats.get(i),Bit.get(i));
-//        }
-//
-//        return Bit;
-//    }
 
-    public String calculateLightToBitSequence(Mat simat, Bitmap bmp) {
+    private String calculateLightToBitSequence(Mat mat, Bitmap bmp) {
 
         int x, y;
         int pixel;
-        String Bits = "";
-        String UseBits = "";
-        CountBit = "";
+        String bits = "";
+        String useBits = "";
+        countBit = "";
 
-        Utils.matToBitmap(simat, bmp);
+        Utils.matToBitmap(mat, bmp);
 
-        for (int i = 0; i < AllPoints.size(); i++) {
+        for (int i = 0; i < allPoints.size(); i++) {
 
-            x = (int) AllPoints.get(i).x;
-            y = (int) AllPoints.get(i).y;
+            x = (int) allPoints.get(i).x;
+            y = (int) allPoints.get(i).y;
 
             pixel = bmp.getPixel(x, y);
 
             if (pixel != Color.BLACK) {
-                Bits += "1";
+                bits += "1";
             } else {
-                Bits += "0";
+                bits += "0";
             }
         }
 
-        CountBit += Bits.charAt(24);
-        CountBit += Bits.charAt(36);
-        CountBit += Bits.charAt(48);
-        CountBit += Bits.charAt(60);
-        CountBit += Bits.charAt(72);
-        CountBit += Bits.charAt(84);
+        countBit += bits.charAt(24);
+        countBit += bits.charAt(36);
+        countBit += bits.charAt(48);
+        countBit += bits.charAt(60);
+        countBit += bits.charAt(72);
+        countBit += bits.charAt(84);
 
-        UseBits += Bits.substring(14, 21);
-        UseBits += Bits.substring(26, 33);
-        UseBits += Bits.substring(38, 45);
-        UseBits += Bits.substring(50, 57);
-        UseBits += Bits.substring(62, 69);
-        UseBits += Bits.substring(74, 81);
-        UseBits += Bits.substring(86, 93);
-        UseBits += Bits.substring(98, 105);
+        useBits += bits.substring(14, 21);
+        useBits += bits.substring(26, 33);
+        useBits += bits.substring(38, 45);
+        useBits += bits.substring(50, 57);
+        useBits += bits.substring(62, 69);
+        useBits += bits.substring(74, 81);
+        useBits += bits.substring(86, 93);
+        useBits += bits.substring(98, 105);
 
-        return UseBits;
+        return useBits;
     }
 
 }
