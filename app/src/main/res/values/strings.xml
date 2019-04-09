@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">LightAppComm</string>
+    <string name="button_record_video">Record Video</string>
+    <string name="button_process_video">Process Video</string>
+    <string name="button_calculate_video">Calculate Video</string>
 </resources>

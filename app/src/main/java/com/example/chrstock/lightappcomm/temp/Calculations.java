@@ -22,8 +22,6 @@ import java.util.Map;
 
 public class Calculations {
 
-    private ArrayList<Point> coordinates;
-
     private List<LineTo> lineList = new ArrayList<>();
     private Map<String, Point> squarePoints = new HashMap<>();
 
@@ -31,30 +29,24 @@ public class Calculations {
     private List<Double> firstColumn;
     private List<Double> lastRow;
     private List<Double> lastColumn;
-    private List<Point> allPoints;
 
     private String countBit;
 
     public String calculateSignal(List<Mat> mats, List<Bitmap> bitmaps) {
-        int count = 0;
         int pskOrder;
 
         String psk;
         String bits;
 
         List<String> pskSorted = new ArrayList<>();
-
+        int count = 0;
 
         for (Mat mat : mats) {
 
             pskOrder = 6;
 
-            allPoints = new ArrayList<>();
-            coordinates = new ArrayList<>();
-
-            calculateBoundingBoxCenter(mat);
-
-            calculateAllDistances();
+            List<Point> coordinates = calculateBoundingBoxCenter(mat);
+            calculateAllDistances(coordinates);
 
             determingPointsInSquare();
 
@@ -65,10 +57,10 @@ public class Calculations {
 
             //comment
 
-            calculateAllPoints();
+            List <Point> points = calculateAllPoints();
             //
 
-            bits = calculateLightToBitSequence(mat, bitmaps.get(count));
+            bits = calculateLightToBitSequence(mat, bitmaps.get(count++),points);
 
             if (countBit.charAt(0) == '1') pskOrder = 0;
             if (countBit.charAt(1) == '1') pskOrder = 1;
@@ -81,7 +73,6 @@ public class Calculations {
 
             pskSorted.add(pskOrder, psk);
 
-            count++;
         }
         psk = "        ";
 
@@ -93,10 +84,12 @@ public class Calculations {
 
     }
 
-    private void calculateBoundingBoxCenter(Mat mat) {
+    private List<Point> calculateBoundingBoxCenter(Mat mat) {
 
         int x;
         int y;
+
+        List<Point> detectedPoints = new ArrayList<>();
 
         Mat matHierarchy = new Mat();
 
@@ -109,23 +102,25 @@ public class Calculations {
             Moments moment = moments.get(i);
             x = (int) (moment.get_m10() / moment.get_m00());
             y = (int) (moment.get_m01() / moment.get_m00());
-            coordinates.add(new Point(x, y));
+            detectedPoints.add(new Point(x, y));
         }
 
         matHierarchy.release();
+
+        return detectedPoints;
     }
 
-    private void calculateAllDistances() {
+    private void calculateAllDistances(List<Point> points) {
 
-        int amount = coordinates.size();
+        int amount = points.size();
         double distance;
         double firstBiggestDistance = 0.0;
         double secondBiggestDistance = 0.0;
 
         for (int i = 0; i < (amount - 1); i++) {
-            Point pointStart = coordinates.get(i);
+            Point pointStart = points.get(i);
             for (int j = (i + 1); j < amount; j++) {
-                Point pointEnd = coordinates.get(j);
+                Point pointEnd = points.get(j);
                 distance = CustomUtils.calculateDistance(pointStart, pointEnd);
                 if (distance > firstBiggestDistance) {
 
@@ -209,7 +204,16 @@ public class Calculations {
     private List<Double> calculateRows(int rowCount) {
         List<Double> column = new ArrayList<>();
 
-        double coordinateXSquarePointA = squarePoints.get("A").x;
+        double coordinateXSquarePointA;
+
+        if(squarePoints.containsKey("A")&squarePoints.get("A")!=null){
+            coordinateXSquarePointA = squarePoints.get("A").x;
+        }else{
+            return null;
+        }
+
+
+
         double coordinateXSquarePointB = squarePoints.get("B").x;
         double coordinateXSquarePointC = squarePoints.get("C").x;
         double coordinateXSquarePointD = squarePoints.get("D").x;
@@ -272,7 +276,9 @@ public class Calculations {
         return column;
     }
 
-    private void calculateAllPoints() {
+    private List<Point> calculateAllPoints() {
+
+        List<Point> points = new ArrayList<>();
 
         double diffX, diffY;
         int x, y;
@@ -289,13 +295,15 @@ public class Calculations {
                 } else {
                     y = (int) Math.abs(firstColumn.get(row) + diffY);
                 }
-                allPoints.add(new Point(x, y));
+                points.add(new Point(x, y));
             }
         }
+
+        return points;
     }
 
 
-    private String calculateLightToBitSequence(Mat mat, Bitmap bmp) {
+    private String calculateLightToBitSequence(Mat mat, Bitmap bmp, List<Point> points) {
 
         int x, y;
         int pixel;
@@ -305,10 +313,10 @@ public class Calculations {
 
         Utils.matToBitmap(mat, bmp);
 
-        for (int i = 0; i < allPoints.size(); i++) {
+        for (int i = 0; i < points.size(); i++) {
 
-            x = (int) allPoints.get(i).x;
-            y = (int) allPoints.get(i).y;
+            x = (int) points.get(i).x;
+            y = (int) points.get(i).y;
 
             pixel = bmp.getPixel(x, y);
 
