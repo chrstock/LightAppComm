@@ -1,4 +1,4 @@
-package com.example.chrstock.lightappcomm.calculations;
+package com.example.chrstock.lightappcomm.utils;
 
 import java.util.stream.Collectors;
 
@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
  *
  * @author chrstock
  */
-public final class ConverterUtils {
+public final class AsciiConverterUtils {
     private static final int LOWEST_ASCII_CHAR = 31;
     private static final int HIGHEST_ASCII_CHAR = 126;
 
