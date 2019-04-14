@@ -1,13 +1,11 @@
 package com.example.chrstock.lightappcomm.temp;
 
-import android.graphics.Bitmap;
 import android.graphics.Color;
 
 import com.example.chrstock.lightappcomm.model.LineTo;
 import com.example.chrstock.lightappcomm.utils.AsciiConverterUtils;
 import com.example.chrstock.lightappcomm.utils.CustomUtils;
 
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
@@ -22,53 +20,38 @@ import java.util.Map;
 
 public class Calculations {
 
-    private static List<LineTo> lineList = new ArrayList<>();
-    private static Map<String, Point> squarePoints = new HashMap<>();
-
-    private static List<Double> firstRow;
-    private static List<Double> firstColumn;
-    private static List<Double> lastRow;
-    private static List<Double> lastColumn;
-    private static String countBit;
-
-    public static String calculateSignal(List<Mat> mats, List<Bitmap> bitmaps) {
-        int pskOrder;
+    public static String calculateSignal(List<Mat> mats) {
 
         String psk;
-        String bits;
 
         List<String> pskSorted = new ArrayList<>();
+
+        List<LineTo> lines;
+        Map<String, Point> squarePoints;
+
         int count = 0;
 
         for (Mat mat : mats) {
 
-            pskOrder = 6;
-
             List<Point> coordinates = calculateBoundingBoxCenter(mat);
-            calculateAllDistances(coordinates);
+            lines = calculateAllDistances(coordinates);
 
-            determingPointsInSquare();
+            squarePoints = determingPointsInSquare(lines);
 
-            firstRow = calculateRows(0);
-            firstColumn = calculateColumns(0);
-            lastRow = calculateRows(11);
-            lastColumn = calculateColumns(11);
+            List<Double> firstRow = calculateRows(0, squarePoints);
+            List<Double> firstColumn = calculateColumns(0, squarePoints);
+            List<Double> lastRow = calculateRows(11, squarePoints);
+            List<Double> lastColumn = calculateColumns(11, squarePoints);
 
-            //comment
+            List<Point> points = calculateAllPoints(firstRow, firstColumn, lastRow, lastColumn);
 
-            List <Point> points = calculateAllPoints();
-            //
+            String bits = MicrocontrollerBitUtils.calculateLightToBitSequence(mat, mats.get(count++), points);
 
-            bits = calculateLightToBitSequence(mat, bitmaps.get(count++),points);
+            int pskOrder = MicrocontrollerBitUtils.calculateCountBit(bits);
 
-            if (countBit.charAt(0) == '1') pskOrder = 0;
-            if (countBit.charAt(1) == '1') pskOrder = 1;
-            if (countBit.charAt(2) == '1') pskOrder = 2;
-            if (countBit.charAt(3) == '1') pskOrder = 3;
-            if (countBit.charAt(4) == '1') pskOrder = 4;
-            if (countBit.charAt(5) == '1') pskOrder = 5;
+            String useBits = MicrocontrollerBitUtils.calculateUseBits(bits);
 
-            psk = AsciiConverterUtils.convertToAscii(bits);
+            psk = AsciiConverterUtils.convertToAscii(useBits);
 
             pskSorted.add(pskOrder, psk);
 
@@ -96,9 +79,8 @@ public class Calculations {
         Imgproc.findContours(mat, contours, matHierarchy, 0, Imgproc.CHAIN_APPROX_SIMPLE, new Point(0, 0));
         Imgproc.drawContours(mat, contours, -1, new Scalar(255, 255, 255), -1);
 
-        List<Moments> moments = new ArrayList<>(contours.size());
-        for (int i = 0; i < contours.size(); i++) {
-            Moments moment = moments.get(i);
+        for (MatOfPoint point : contours) {
+            Moments moment = Imgproc.moments(point);
             x = (int) (moment.get_m10() / moment.get_m00());
             y = (int) (moment.get_m01() / moment.get_m00());
             detectedPoints.add(new Point(x, y));
@@ -109,12 +91,14 @@ public class Calculations {
         return detectedPoints;
     }
 
-    private static void calculateAllDistances(List<Point> points) {
+    private static List<LineTo> calculateAllDistances(List<Point> points) {
 
         int amount = points.size();
         double distance;
         double firstBiggestDistance = 0.0;
         double secondBiggestDistance = 0.0;
+
+        List<LineTo> lines = new ArrayList<>();
 
         for (int i = 0; i < (amount - 1); i++) {
             Point pointStart = points.get(i);
@@ -124,26 +108,29 @@ public class Calculations {
                 if (distance > firstBiggestDistance) {
 
                     if (firstBiggestDistance != 0.0)
-                        lineList.add(1, lineList.get(0));
+                        lines.add(1, lines.get(0));
 
-                    lineList.add(0, new LineTo(pointStart, pointEnd));
+                    lines.add(0, new LineTo(pointStart, pointEnd));
                     secondBiggestDistance = firstBiggestDistance;
                     firstBiggestDistance = distance;
                 } else {
                     if (distance > secondBiggestDistance) {
-                        lineList.add(1, new LineTo(pointStart, pointEnd));
+                        lines.add(1, new LineTo(pointStart, pointEnd));
                         secondBiggestDistance = distance;
                     }
                 }
             }
         }
+        return lines;
     }
 
-    private static void determingPointsInSquare() {
+    private static Map<String, Point> determingPointsInSquare(List<LineTo> lineList) {
 
         double nearDistanceOrigin = 2000.0;
         double farDistanceOrigin = 0.0;
         double distance;
+
+        Map<String, Point> squarePoints = new HashMap<>();
 
         try {
             for (int i = 0; i < 2; i++) {
@@ -197,20 +184,20 @@ public class Calculations {
             squarePoints.put("D", new Point(0, 0));
         }
 
+        return squarePoints;
 
     }
 
-    private static List<Double> calculateRows(int rowCount) {
+    private static List<Double> calculateRows(int rowCount, Map<String, Point> squarePoints) {
         List<Double> column = new ArrayList<>();
 
         double coordinateXSquarePointA;
 
-        if(squarePoints.containsKey("A")&squarePoints.get("A")!=null){
+        if (squarePoints.containsKey("A") & squarePoints.get("A") != null) {
             coordinateXSquarePointA = squarePoints.get("A").x;
-        }else{
+        } else {
             return null;
         }
-
 
 
         double coordinateXSquarePointB = squarePoints.get("B").x;
@@ -244,7 +231,7 @@ public class Calculations {
         return column;
     }
 
-    private static List<Double> calculateColumns(int columnCount) {
+    private static List<Double> calculateColumns(int columnCount, Map<String, Point> squarePoints) {
 
         List<Double> column = new ArrayList<>();
 
@@ -275,7 +262,7 @@ public class Calculations {
         return column;
     }
 
-    private static List<Point> calculateAllPoints() {
+    private static List<Point> calculateAllPoints(List<Double> firstRow, List<Double> firstColumn, List<Double> lastRow, List<Double> lastColumn) {
 
         List<Point> points = new ArrayList<>();
 
@@ -299,50 +286,6 @@ public class Calculations {
         }
 
         return points;
-    }
-
-
-    private static String calculateLightToBitSequence(Mat mat, Bitmap bmp, List<Point> points) {
-
-        int x, y;
-        int pixel;
-        String bits = "";
-        String useBits = "";
-        countBit = "";
-
-        Utils.matToBitmap(mat, bmp);
-
-        for (int i = 0; i < points.size(); i++) {
-
-            x = (int) points.get(i).x;
-            y = (int) points.get(i).y;
-
-            pixel = bmp.getPixel(x, y);
-
-            if (pixel != Color.BLACK) {
-                bits += "1";
-            } else {
-                bits += "0";
-            }
-        }
-
-        countBit += bits.charAt(24);
-        countBit += bits.charAt(36);
-        countBit += bits.charAt(48);
-        countBit += bits.charAt(60);
-        countBit += bits.charAt(72);
-        countBit += bits.charAt(84);
-
-        useBits += bits.substring(14, 21);
-        useBits += bits.substring(26, 33);
-        useBits += bits.substring(38, 45);
-        useBits += bits.substring(50, 57);
-        useBits += bits.substring(62, 69);
-        useBits += bits.substring(74, 81);
-        useBits += bits.substring(86, 93);
-        useBits += bits.substring(98, 105);
-
-        return useBits;
     }
 
 }

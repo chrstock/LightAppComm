@@ -2,6 +2,7 @@ package com.example.chrstock.lightappcomm;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -10,13 +11,20 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.example.chrstock.lightappcomm.temp.Calculations;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonProcess;
     private Button buttonCalculate;
 
+    private TextView textView;
+
     public void recordButton(View view) {
         dispatchTakeVideoIntent();
         showOnlyProcessButton();
@@ -41,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         buttonRecord = findViewById(R.id.button_record_video);
         buttonProcess = findViewById(R.id.button_process_video);
         buttonCalculate = findViewById(R.id.button_calculate_video);
+        textView = findViewById(R.id.textView);
+
+        showOnlyCalculateButton();
     }
 
     public void processButton(View view) {
@@ -49,16 +62,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void calculateButton(View view) {
-        List<Mat> mats = new ArrayList<>();
 
-        for (Bitmap bitmap : this.bitmaps) {
-            Mat mat = new Mat();
-            Utils.bitmapToMat(bitmap, mat);
-            mats.add(mat);
-        }
+        Bitmap bitmapTemp = BitmapFactory.decodeResource(getResources(),R.drawable.fotonah);
 
-        Calculations.calculateSignal(mats, bitmaps);
+        Mat src = new Mat(bitmapTemp.getHeight(),bitmapTemp.getWidth(),CvType.CV_8UC1);
+        Utils.bitmapToMat(bitmapTemp,src);
+        src.convertTo(src,CvType.CV_8U);
+
+        List<Mat> matsNew = produceMats(src,bitmapTemp);
+
+        String text = Calculations.calculateSignal(matsNew);
+        textView.setText(text);
         showOnlyRecordButton();
+    }
+
+    private List<Mat> produceMats(Mat src, Bitmap bitmap){
+
+        Mat hsvImage = new Mat();
+
+        Mat newSrc = new Mat();
+        src.convertTo(newSrc,CvType.CV_8UC1);
+
+        Imgproc.cvtColor(newSrc, hsvImage, Imgproc.COLOR_BGR2HSV);
+
+        Mat maskedImage = new Mat();
+
+        Core.inRange(hsvImage, new Scalar(0, 50, 40), new Scalar(10, 255, 255), maskedImage);
+
+        List<Mat> mats = new ArrayList<>();
+        mats.add(hsvImage);
+        return mats;
+
     }
 
     private List<Bitmap> getFrames(Uri videoUri) {
