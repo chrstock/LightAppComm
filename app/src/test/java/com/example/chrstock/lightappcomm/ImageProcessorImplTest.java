@@ -3,7 +3,7 @@ package com.example.chrstock.lightappcomm;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import com.example.chrstock.lightappcomm.temp.Calculations;
+import com.example.chrstock.lightappcomm.temp.ImageProcessorImpl;
 
 import org.assertj.core.util.Lists;
 import org.junit.Test;
@@ -14,7 +14,7 @@ import java.io.InputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CalculationsTest {
+public class ImageProcessorImplTest {
 
     private static final String FILE_RECORD_CLOSE = "fotonah.png";
 
@@ -25,7 +25,7 @@ public class CalculationsTest {
 
         Utils.bitmapToMat(bitmapPhotoClose,mat);
 
-        String psk = Calculations.calculateSignal(Lists.newArrayList(mat));
+        String psk = ImageProcessorImpl.calculateSignal(Lists.newArrayList(mat));
         assertThat(psk).isNotNull();
 
     }

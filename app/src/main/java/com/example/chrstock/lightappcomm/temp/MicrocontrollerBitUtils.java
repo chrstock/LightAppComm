@@ -32,21 +32,12 @@ public final class MicrocontrollerBitUtils {
 
     public static String calculateUseBits(String allBits) {
 
-        StringBuilder useBits = new StringBuilder();
-
-        useBits.append(allBits.substring(14,21));
-        useBits.append(allBits.substring(26,33));
-        useBits.append(allBits.substring(38,45));
-        useBits.append(allBits.substring(50,57));
-        useBits.append(allBits.substring(62,69));
-        useBits.append(allBits.substring(74,81));
-        useBits.append(allBits.substring(86,93));
-        useBits.append(allBits.substring(98,105));
-
-        return useBits.toString();
+        return allBits.substring(14, 21) + allBits.substring(26, 33) + allBits.substring(38, 45)
+                + allBits.substring(50, 57) + allBits.substring(62, 69) + allBits.substring(74, 81)
+                + allBits.substring(86, 93) + allBits.substring(98, 105);
     }
 
-    public static String calculateLightToBitSequence(Mat mat, Mat bmp, List<Point> points) {
+    public static String calculateLightToBitSequence(List<Point> points) {
 
         int x, y;
         int pixel;

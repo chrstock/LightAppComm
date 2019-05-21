@@ -11,10 +11,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.chrstock.lightappcomm.temp.Calculations;
+import com.example.chrstock.lightappcomm.temp.ImageProcessor;
+import com.example.chrstock.lightappcomm.temp.ImageProcessorImpl;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
@@ -24,9 +24,10 @@ import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonCalculate;
 
     private TextView textView;
+
+    private ImageProcessor imageProcessor = new ImageProcessorImpl();
 
     public void recordButton(View view) {
         dispatchTakeVideoIntent();
@@ -71,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         List<Mat> matsNew = produceMats(src,bitmapTemp);
 
-        String text = Calculations.calculateSignal(matsNew);
+        String text = imageProcessor.calculateSignal(matsNew);
         textView.setText(text);
         showOnlyRecordButton();
     }
@@ -83,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         Mat newSrc = new Mat();
         src.convertTo(newSrc,CvType.CV_8UC1);
 
-        Imgproc.cvtColor(newSrc, hsvImage, Imgproc.COLOR_BGR2HSV);
+        Imgproc.cvtColor(newSrc, hsvImage, Imgproc.COLOR_BGR2GRAY);
 
         Mat maskedImage = new Mat();
 
