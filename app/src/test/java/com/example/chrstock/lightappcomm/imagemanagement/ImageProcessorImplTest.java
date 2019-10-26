@@ -1,31 +1,28 @@
-package com.example.chrstock.lightappcomm;
+package com.example.chrstock.lightappcomm.imagemanagement;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import com.example.chrstock.lightappcomm.temp.ImageProcessorImpl;
+import com.example.chrstock.lightappcomm.config.ComponentTest;
 
-import org.assertj.core.util.Lists;
 import org.junit.Test;
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
 
 import java.io.InputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ImageProcessorImplTest {
+public class ImageProcessorImplTest extends ComponentTest {
 
     private static final String FILE_RECORD_CLOSE = "fotonah.png";
 
     @Test
     public void checkThatResultIsNotNull(){
-        Bitmap bitmapPhotoClose = getBitmap(FILE_RECORD_CLOSE);
-        Mat mat = new Mat();
+        //Bitmap bitmapPhotoClose = getBitmap(FILE_RECORD_CLOSE);
+        //Mat mat = new Mat();
 
-        Utils.bitmapToMat(bitmapPhotoClose,mat);
+        //Utils.bitmapToMat(bitmapPhotoClose,mat);
 
-        String psk = ImageProcessorImpl.calculateSignal(Lists.newArrayList(mat));
+        String psk = getImageProcessor().calculateSignal(null);
         assertThat(psk).isNotNull();
 
     }

@@ -1,76 +1,73 @@
 package com.example.chrstock.lightappcomm.utils;
 
 import com.example.chrstock.lightappcomm.model.LineTo;
+import com.google.common.collect.Lists;
 
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LineUtils {
 
-    private static final double NEAR_DISTANCE_ORIGIN = 2000.0;
+    public static Map<Character, Point> determingPointsInSquare(List<LineTo> lineList) {
 
-    private static final double FAR_DISTANCE_ORIGIN = 0.0;
+        Map<Character, Point> squarePoints = new HashMap<>();
 
-    public static List<Point> determingPointsInSquare(List<LineTo> lineList) {
+        List<Point> points = getAllPointsOfLineList(lineList);
 
-        List<Point> edgePoints = new ArrayList<>(4);
+        Point pointD = calculateEdgePointD(points);
+        squarePoints.put('D', pointD);
+        Point pointB = calculateEdgePointB(points);
+        squarePoints.put('B', pointB);
 
+        Point pointA;
+        Point pointC;
+
+        if (squarePoints.containsValue(lineList.get(0).getPointStart()) || squarePoints.containsValue(lineList.get(0).getPointEnd())) {
+
+            LineTo line2 = lineList.get(1);
+            Point line2PointStart = line2.getPointStart();
+            Point line2PointEnd = line2.getPointEnd();
+
+            pointA = line2PointStart.y < line2PointEnd.y ? line2PointStart : line2PointEnd;
+            pointC = line2PointStart.y < line2PointEnd.y ? line2PointEnd : line2PointStart;
+        } else {
+            LineTo line1 = lineList.get(0);
+            Point line1PointStart = line1.getPointStart();
+            Point line1PointEnd = line1.getPointEnd();
+
+            pointA = line1PointStart.y < line1PointEnd.y ? line1PointStart : line1PointEnd;
+            pointC = line1PointStart.y < line1PointEnd.y ? line1PointEnd : line1PointStart;
+        }
+
+        squarePoints.put('A', pointA);
+        squarePoints.put('C', pointC);
+
+        return squarePoints;
+
+    }
+
+    private static List<Point> getAllPointsOfLineList(List<LineTo> lineList) {
 
         List<Point> points = new ArrayList<>();
 
-        for (LineTo line : lineList) {
-            points.add(line.getPointStart());
-            points.add(line.getPointEnd());
-        }
+        lineList.forEach(l -> points.addAll(Lists.newArrayList(l.getPointStart(), l.getPointEnd())));
 
-        Point pointD = calculateEdgePointD(points);
-
-        Point pointB = calculateEdgePointB(points);
-
-        LineTo line1 = lineList.get(0);
-        Point line1PointStart = line1.getPointStart();
-        Point line1PointEnd = line1.getPointEnd();
-        LineTo line2 = lineList.get(1);
-        Point line2PointStart = line2.getPointStart();
-        Point line2PointEnd = line2.getPointEnd();
-
-        if (edgePoints.contains(line1PointStart) || edgePoints.contains(line1PointEnd)) {
-            if (line2PointStart.y < line2PointEnd.y) {
-                edgePoints.set(1, line2PointStart);
-                edgePoints.set(2, line2PointEnd);
-            } else {
-                edgePoints.set(1, line2PointEnd);
-                edgePoints.set(2, line2PointStart);
-            }
-        } else {
-            if (line1PointStart.y < line1PointEnd.y) {
-                edgePoints.set(1, line1PointStart);
-                edgePoints.set(2, line1PointEnd);
-            } else {
-                edgePoints.set(1, line1PointEnd);
-                edgePoints.set(2, line1PointStart);
-            }
-        }
-
-        return edgePoints;
-
+        return points;
     }
 
     private static Point calculateEdgePointB(List<Point> points) {
 
-        double farestDistance = FAR_DISTANCE_ORIGIN;
-
+        double furthestDistance = 0.0;
         Point pointB = new Point();
 
         for (Point point : points) {
-
             double calculatedDistance = calculateDistanceToOrigin(point);
-
-            if (isPointFarerToOrigin(farestDistance,calculatedDistance)) {
-
-                farestDistance = calculatedDistance;
+            if (isPointFurtherToOrigin(furthestDistance, calculatedDistance)) {
+                furthestDistance = calculatedDistance;
                 pointB = point;
             }
         }
@@ -81,15 +78,12 @@ public class LineUtils {
 
     private static Point calculateEdgePointD(List<Point> points) {
 
-        double closestDistance = NEAR_DISTANCE_ORIGIN;
-
+        double closestDistance = 2000.0;
         Point pointD = new Point();
 
         for (Point point : points) {
-
             double calculatedDistance = calculateDistanceToOrigin(point);
-
-            if (isPointCloserToOrigin(closestDistance,calculatedDistance)) {
+            if (isPointCloserToOrigin(closestDistance, calculatedDistance)) {
                 closestDistance = calculatedDistance;
                 pointD = point;
             }
@@ -99,11 +93,11 @@ public class LineUtils {
 
     }
 
-    private static boolean isPointCloserToOrigin(double currentDistance, double newDistance){
+    private static boolean isPointCloserToOrigin(double currentDistance, double newDistance) {
         return newDistance < currentDistance;
     }
 
-    private static boolean isPointFarerToOrigin(double currentDistance, double newDistance){
+    private static boolean isPointFurtherToOrigin(double currentDistance, double newDistance) {
         return newDistance > currentDistance;
     }
 

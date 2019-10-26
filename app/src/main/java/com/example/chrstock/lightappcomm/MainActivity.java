@@ -2,22 +2,19 @@ package com.example.chrstock.lightappcomm;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.example.chrstock.lightappcomm.temp.ImageProcessor;
-import com.example.chrstock.lightappcomm.temp.ImageProcessorImpl;
+import com.example.chrstock.lightappcomm.imagemanagement.api.ImageProcessor;
 
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -43,7 +40,12 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView textView;
 
-    private ImageProcessor imageProcessor = new ImageProcessorImpl();
+    @Inject
+    ImageProcessor imageProcessor;
+
+    public MainActivity(ImageProcessor imageProcessor){
+        this.imageProcessor = imageProcessor;
+    }
 
     public void recordButton(View view) {
         dispatchTakeVideoIntent();
@@ -66,25 +68,25 @@ public class MainActivity extends AppCompatActivity {
 
     public void calculateButton(View view) {
 
-        Bitmap bitmapTemp = BitmapFactory.decodeResource(getResources(),R.drawable.fotonah);
+        /*Bitmap bitmapTemp = BitmapFactory.decodeResource(getResources(),R.drawable.fotonah);
 
-        Mat src = new Mat(bitmapTemp.getHeight(),bitmapTemp.getWidth(),CvType.CV_8UC1);
-        Utils.bitmapToMat(bitmapTemp,src);
-        src.convertTo(src,CvType.CV_8U);
+        Mat src = new Mat(bitmapTemp.getHeight(), bitmapTemp.getWidth(), CvType.CV_8UC1);
+        Utils.bitmapToMat(bitmapTemp, src);
+        src.convertTo(src, CvType.CV_8U);
 
-        List<Mat> matsNew = produceMats(src,bitmapTemp);
+        List<Mat> matsNew = produceMats(src, bitmapTemp);
 
         String text = imageProcessor.calculateSignal(matsNew);
         textView.setText(text);
-        showOnlyRecordButton();
+        showOnlyRecordButton();*/
     }
 
-    private List<Mat> produceMats(Mat src, Bitmap bitmap){
+    private List<Mat> produceMats(Mat src, Bitmap bitmap) {
 
         Mat hsvImage = new Mat();
 
         Mat newSrc = new Mat();
-        src.convertTo(newSrc,CvType.CV_8UC1);
+        src.convertTo(newSrc, CvType.CV_8UC1);
 
         Imgproc.cvtColor(newSrc, hsvImage, Imgproc.COLOR_BGR2GRAY);
 
@@ -118,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         initializeView();
 

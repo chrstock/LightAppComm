@@ -2,32 +2,47 @@ package com.example.chrstock.lightappcomm.temp;
 
 import android.graphics.Color;
 
-import org.opencv.core.Mat;
 import org.opencv.core.Point;
 
 import java.util.List;
 
 public final class MicrocontrollerBitUtils {
 
+    private static final int POSITION_COUNT_BIT_1 = 24;
+
+    private static final int POSITION_COUNT_BIT_2 = 36;
+
+    private static final int POSITION_COUNT_BIT_3 = 48;
+
+    private static final int POSITION_COUNT_BIT_4 = 60;
+
+    private static final int POSITION_COUNT_BIT_5 = 72;
+
+    private static final int POSITION_COUNT_BIT_6 = 84;
+
+    /**
+     * Calculates the current order position of the Pointmatrix
+     *
+     * @param allBits - all catched points
+     * @return current order position
+     */
     public static int calculateCountBit(String allBits) {
 
-        int count = 0;
-
-        if (allBits.charAt(24) == '1') {
-            count = 1;
-        } else if (allBits.charAt(36) == '1') {
-            count = 2;
-        } else if (allBits.charAt(48) == '1') {
-            count = 3;
-        } else if (allBits.charAt(60) == '1') {
-            count = 4;
-        } else if (allBits.charAt(72) == '1') {
-            count = 5;
-        } else if (allBits.charAt(84) == '1') {
-            count = 6;
+        if (isBitOn(allBits, POSITION_COUNT_BIT_1)) {
+            return 1;
+        } else if (isBitOn(allBits, POSITION_COUNT_BIT_2)) {
+            return 2;
+        } else if (isBitOn(allBits, POSITION_COUNT_BIT_3)) {
+            return 3;
+        } else if (isBitOn(allBits, POSITION_COUNT_BIT_4)) {
+            return 4;
+        } else if (isBitOn(allBits, POSITION_COUNT_BIT_5)) {
+            return 5;
+        } else if (isBitOn(allBits, POSITION_COUNT_BIT_6)) {
+            return 6;
+        } else {
+            return 0;
         }
-
-        return count;
     }
 
     public static String calculateUseBits(String allBits) {
@@ -39,14 +54,10 @@ public final class MicrocontrollerBitUtils {
 
     public static String calculateLightToBitSequence(List<Point> points) {
 
-        int x, y;
         int pixel;
         StringBuilder bits = new StringBuilder();
 
         for (int i = 0; i < points.size(); i++) {
-
-            x = (int) points.get(i).x;
-            y = (int) points.get(i).y;
 
             pixel = 1;
 
@@ -58,5 +69,9 @@ public final class MicrocontrollerBitUtils {
         }
 
         return bits.toString();
+    }
+
+    private static boolean isBitOn(String allBits, int i) {
+        return allBits.charAt(i) == '1';
     }
 }

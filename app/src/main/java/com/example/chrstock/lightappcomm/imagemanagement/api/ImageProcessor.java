@@ -1,10 +1,8 @@
-package com.example.chrstock.lightappcomm.temp;
+package com.example.chrstock.lightappcomm.imagemanagement.api;
 
 import org.opencv.core.Mat;
 
 import java.util.List;
-
-import dagger.Component;
 
 public interface ImageProcessor {
 
@@ -14,7 +12,7 @@ public interface ImageProcessor {
     /**
      * Calulcates the Message from the Signal
      *
-     * @param mats Liste of Mats
+     * @param mats Liste of {@link Mat}
      * @return Message
      */
     String calculateSignal(List<Mat> mats);
